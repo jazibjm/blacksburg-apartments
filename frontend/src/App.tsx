@@ -1,23 +1,33 @@
 import { useEffect, useState } from 'react';
 import ListingCard from './components/ListingCard';
+import type { Listing } from './components/ListingCard';
 import ChatWidget from './components/ChatWidget';
+import { API_BASE_URL } from './config';
+import { fallbackListings } from './data/fallbackListings';
 
 export default function App() {
-  const [listings, setListings] = useState<any[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [usingFallbackData, setUsingFallbackData] = useState(false);
 
   useEffect(() => {
     async function fetchListings() {
       try {
-        const res = await fetch('http://localhost:4000/api/listings');
+        const res = await fetch(`${API_BASE_URL}/api/listings`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        setListings(Array.isArray(data) ? data : []);
-      } catch (err: any) {
-        console.error('Failed to fetch listings:', err);
-        setError('Could not load listings. Please try again later.');
+        if (!Array.isArray(data) || data.length === 0) {
+          throw new Error('No listings returned');
+        }
+        setListings(data);
+        setUsingFallbackData(false);
+      } catch (err) {
+        if (import.meta.env.DEV) {
+          console.warn('Using showcase listings because the API is unavailable:', err);
+        }
+        setListings(fallbackListings);
+        setUsingFallbackData(true);
       } finally {
         setLoading(false);
       }
@@ -63,22 +73,33 @@ export default function App() {
 
       {loading ? (
         <p>Loading listings...</p>
-      ) : error ? (
-        <p style={{ color: 'red' }}>{error}</p>
       ) : listings.length === 0 ? (
         <p>No listings found.</p>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '2rem',
-          }}
-        >
-          {listings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} darkMode={darkMode} />
-          ))}
-        </div>
+        <>
+          {usingFallbackData && (
+            <p
+              style={{
+                margin: '0 0 1rem',
+                color: darkMode ? '#c8d1dc' : '#5f6368',
+                maxWidth: '760px',
+              }}
+            >
+              Showcase mode: sample listings are loaded locally for this public demo.
+            </p>
+          )}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '2rem',
+            }}
+          >
+            {listings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} darkMode={darkMode} />
+            ))}
+          </div>
+        </>
       )}
 
       {/* AI Chat Widget at bottom-right */}

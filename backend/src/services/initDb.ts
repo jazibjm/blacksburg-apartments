@@ -6,11 +6,19 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 const createTable = `
 CREATE TABLE IF NOT EXISTS apartments (
-  id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL,
-  rent TEXT,
-  status TEXT
+  id SERIAL PRIMARY KEY
 );
+
+ALTER TABLE apartments ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE apartments ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE apartments ADD COLUMN IF NOT EXISTS price TEXT;
+ALTER TABLE apartments ADD COLUMN IF NOT EXISTS beds TEXT;
+ALTER TABLE apartments ADD COLUMN IF NOT EXISTS amenities TEXT;
+ALTER TABLE apartments ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE apartments ADD COLUMN IF NOT EXISTS url TEXT;
+ALTER TABLE apartments ADD COLUMN IF NOT EXISTS summary TEXT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS apartments_url_unique ON apartments (url);
 `;
 
 (async () => {
